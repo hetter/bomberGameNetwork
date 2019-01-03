@@ -1,4 +1,4 @@
-local Protocol = inherit(nil, "Protocol");
+local Protocol = inherit(nil, gettable("BM_Protocol"));
 
 -- 数据类型
 Protocol.PT_MIN			= 1;
@@ -44,7 +44,7 @@ function Protocol._writeBool(stream, writeValue)
 end
 
 -- 定义描述类型
-function defineDesc(name, valueType, default, isLocal, checkValue)
+function Protocol.defineDesc(name, valueType, default, isLocal, checkValue)
 	assert(name, "key值不能为空");
 	return {name = name; valueType = valueType; default = default; isLocal = isLocal, checkValue = checkValue};
 end

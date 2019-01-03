@@ -1,8 +1,12 @@
 local message = gettable("BM_Message");
 
+message.MagicCode 	= "\19\85";
+message.Version 	= "\10\0"; 
+message.Head 		= message.MagicCode .. message.Version;
+
 --[[
 	udp 
-	{name = keepworkUsername, projectId = 900, version = 1001, editMode = true/false}
+	{name = keepworkUsername}
 --]]
 message.REQUEST_ECHO		= 1;
 
