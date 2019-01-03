@@ -19,8 +19,8 @@ end
 
 --echo("sEdgeId:" .. sEdgeId)
 
-local sCheckHalfWidth = 50;
-local sCheckHigh = 100;
+local sCheckHalfWidth = 25;
+local sCheckHigh = 50;
 
 local function findAABB()
 	local startPoint, endPoint;
@@ -78,25 +78,31 @@ local aa, bb = findAABB();
 cmd("/echo " .. (string.format("aa:%s %s %s bb:%s %s %s", aa.x, aa.y, aa.z, bb.x, bb.y, bb.z)))
 
 local sRecorder = {};
-local function findRecorder()
-
-	for j = -sCheckHalfWidth, sCheckHalfWidth do
-		local cx = sLocalX + j;
-		local cy = sLocalY;
-		local cz = sLocalZ + 2;
-		
-		local blockId = getBlock(cx, cy, cz);
-		if blockId ~= 0 then
-			cmd("/echo --------------record id:" .. tostring(blockId));
-			sRecorder[blockId] = {};
-			sRecorder[blockId].top = getBlock(cx, cy + 1, cz);
-			sRecorder[blockId].replace = getBlock(cx + 1, cy, cz);
+local function findRecorder(aa, bb)
+	local isSkip = false;
+	for j = aa.x, bb.x do
+		if isSkip then
+			isSkip = false;
+		else 
+			local cx = j;
+			local cy = sLocalY;
+			local cz = sLocalZ + 2;
+			
+			local blockId = getBlock(cx, cy, cz);
+			if blockId ~= 0 then
+				cmd("/echo --------------record id:" .. tostring(blockId));
+				sRecorder[blockId] = {};
+				sRecorder[blockId].top = getBlock(cx, cy + 1, cz);
+				sRecorder[blockId].replace = getBlock(cx + 1, cy, cz);
+				
+				isSkip = true;
+			end	
 		end	
 	end
 
 end
 
-findRecorder();
+findRecorder(aa, bb);
 
 local function saveStageTable(aa, bb)
 	local retTable = {};
@@ -172,5 +178,12 @@ local function createScene(stageTable, aa, bb, newAA)
 end
 
 ask("请输入开始坐标")
-local pos = commonlib.split(answer, " ");
-createScene(stageTable, aa, bb, {x=tonumber(pos[1]), z=tonumber(pos[3])})
+local x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
+
+while(x == nil)do
+	ask("请输入正确格式（数字坐标x 数字坐标y 数字坐标z）")
+	x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
+end
+
+
+createScene(stageTable, aa, bb, {x=x, z=z})
