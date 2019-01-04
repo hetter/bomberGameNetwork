@@ -22,16 +22,17 @@ function Client:startSearchServer()
 		
 		local t = {};
 		for i = 1, #serverList do
-			table.insert(t, serverList[i]:GetUserName() .. "(" .. serverList[i].nickname .. ")");
+			table.insert(t, serverList[i].data.keepworkUsername .. ":" .. serverList[i].ip);
 		end
 		
 		ask("选择服务器", t);
 	end
 	
-	local function onServerInfo(bSucceed, data)
+	local function onServerInfo(bSucceed, data, nid)
 		if bSucceed then
-			if data:GetUserName() ~= System.User.keepworkUsername then
-				table.insert(serverList, data);
+			if data.keepworkUsername ~= System.User.keepworkUsername then
+				local ip, _ = string.match(nid, "~udp(%d+.%d+.%d+.%d+)_(%d+)");
+				table.insert(serverList, {data = data, ip = ip});
 			end
 		else
 			gLogic:runOnNextFrame(selectServer);
@@ -50,14 +51,10 @@ function Client:startSearchServer()
 		-- 设置为true的话用于调试时忽略版本号
 		--editMode			= true;
 	};
-	local pt_writer = Desc.request_echo;
 	
-	local stream = pt_writer:createStream(data);
-	local str = Message.Head .. stream:ReadString(stream:GetFileSize());
-	stream:close();
 
 	-- 广播原始数据
-	sendNetworkEvent(nil, nil, str);
+	SendNetworkSteam(nil, Desc.request_echo, data);
 end
 
 function Client:onEnter()

@@ -62,8 +62,8 @@ function Logic:addNetListener(eventName, cb, times, timeOut)
 	
 	local handle;
 	local action;
-	local function _cb(eventName, data)
-		cb(true, data);
+	local function _cb(eventName, ...)
+		cb(true, unpack{...});
 		times = times - 1;
 		
 		if times == 0 then
