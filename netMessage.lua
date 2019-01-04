@@ -15,3 +15,18 @@ message.REQUEST_ECHO		= 1;
 	{port = 8099, name = keepworkUsername}
 ]]
 message.RESPONSE_ECHO		= 2;
+
+--[[
+	udp
+]]
+message.CLIENT_FRAME		= 3;
+
+--[[
+	udp
+]]
+message.SERVER_FRAME		= 4;
+
+--[[
+	udp
+]]
+message.FRAME_CONFIRM		= 5;

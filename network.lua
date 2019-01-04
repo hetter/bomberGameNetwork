@@ -55,6 +55,7 @@ local function onConnect(msg)
 			nid = "LobbyServer_kkvskkkk";
 		};
 	]]
+	tip(msg.userinfo.keepworkUsername .. "已连接");
 end
 
 local function onDisconnect(msg)
@@ -66,6 +67,7 @@ local function onDisconnect(msg)
 			nid = "LobbyServer_kkvskkkk";
 		};
 	]]
+	tip(msg.userinfo.keepworkUsername .. "断开连接");
 end
 
 
@@ -100,5 +102,13 @@ end
 
 wait(5);
 
-StartBMNetwork();
-StartSearchServer();
+ask({"服务器", "客户端"})
+
+if answer == 1 then
+	StartBMNetwork();
+else answer == 2 then
+	StartBMNetwork();
+	StartSearchServer();
+else
+	exit();
+end
