@@ -106,7 +106,7 @@ ask({"服务器", "客户端"})
 
 if answer == 1 then
 	StartBMNetwork();
-else answer == 2 then
+elseif answer == 2 then
 	StartBMNetwork();
 	StartSearchServer();
 else
