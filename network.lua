@@ -102,7 +102,7 @@ end
 
 wait(5);
 
-ask({"服务器", "客户端"})
+ask("什么", {"服务器", "客户端"})
 
 if answer == 1 then
 	StartBMNetwork();
