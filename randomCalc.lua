@@ -1,24 +1,30 @@
 local Random = inherit(nil, gettable("BM_random"));
 
-Random.z = 123;                     
-local function schrage_next()
+                   
+function Random:_schrage_next()
 	local a = 16807;		
 	local c = 0;
 	local m = 2147483647;  
 	local q = m / a;      
 	local r = m % a;        
-	local _z = a * (Random.z % q) - r * math.floor((Random.z / q) + c); 
+	local _z = a * (self._z % q) - r * math.floor((self._z / q) + c); 
 	if(_z < 0)then
 		_z = _z + m; 
 	end
-	Random.z = _z;
-	return Random.z;
+	self._z = _z;
+	return self_.z;
 end
 
-function Random.srand(seed)
-	Random.z = seed;
+function Random:ctor()
+	self._z = 123;
 end
 
-function Random.rand(var1, var2)
-	return var1 + math.floor(schrage_next() % (var2 - var1));
+function Random:srand(seed)
+	self._z = seed;
 end
+
+function Random:rand(var1, var2)
+	return var1 + math.floor(self:_schrage_next() % (var2 - var1));
+end
+
+gRandom = Random.new();
