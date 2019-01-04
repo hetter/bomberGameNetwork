@@ -41,6 +41,8 @@ local function onNetMsg(msg)
 	if cb then
 		cb(stream, msg.nid);
 	end
+	
+	stream:close();
 end
 
 
@@ -90,6 +92,7 @@ function StartSearchServer()
 	
 	local stream = pt_writer:createStream(data);
 	local str = message.Head .. stream:ReadString(stream:GetFileSize());
+	stream:close();
 
 	-- 广播原始数据
 	sendNetworkEvent(nil, nil, str);
