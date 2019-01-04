@@ -65,8 +65,10 @@ function eventDispatcher:removeListener(handleToRemove, eventName)
 end
 
 -- 派发消息
--- @param data : 原封不动的传给listener
-function eventDispatcher:dispatchEvent(eventName, data)
+-- @param ... : 原封不动的传给listener
+function eventDispatcher:dispatchEvent(eventName, ...)
+
+	local param = {...}
 	local l = self._listener[eventName];
 	if not l then
 		return;
@@ -74,7 +76,7 @@ function eventDispatcher:dispatchEvent(eventName, data)
 	local removeList = {};
 		
 	for handle, listener in pairs(l) do
-		local bRemove =  listener(eventName, data);
+		local bRemove =  listener(eventName, unpack(param));
 			
 		if bRemove then
 			table.insert(removeList, handle);

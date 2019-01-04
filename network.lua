@@ -12,7 +12,7 @@ callbacks[Message.REQUEST_ECHO] = function(stream, nid)
 		local pt_reader = Desc.request_echo;
 		local data = pt_reader:readStream(stream);
 		
-		gNetworkDispatcher:dispatchEvent(Message.REQUEST_ECHO, data);
+		gNetworkDispatcher:dispatchEvent(Message.REQUEST_ECHO, data, nid);
 	end
 end
 
@@ -21,7 +21,7 @@ callbacks[Message.RESPONSE_ECHO] = function(stream, nid)
 		local pt_reader = Desc.response_echo;
 		local data = pt_reader:readStream(stream);
 		
-		gNetworkDispatcher:dispatchEvent(Message.RESPONSE_ECHO, data);
+		gNetworkDispatcher:dispatchEvent(Message.RESPONSE_ECHO, data, nid);
 	end
 end
 
@@ -77,6 +77,13 @@ local function onDisconnect(msg)
 	]]
 	
 	gNetworkDispatcher:dispatchEvent("disconnect", msg.userinfo);
+end
+
+function SendNetworkSteam(addr, writer, data)
+	local stream = writer:createStream(data);
+	local str = Message.Head .. stream:ReadString(stream:GetFileSize());
+	stream:close();
+	sendNetworkEvent(addr, nil, str);
 end
 
 
