@@ -88,7 +88,7 @@ function eventDispatcher:dispatchEvent(eventName, ...)
 	end
 	
 	if not next(l) then
-		self._listener = nil;
+		self._listener[eventName] = nil;
 	end
 end
 
