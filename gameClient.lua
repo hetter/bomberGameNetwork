@@ -15,17 +15,18 @@ function Client:startSearchServer()
 	
 	local function selectServer()
 		if #serverList == 0 then
-			tip("æ²¡æœ‰æ‰¾åˆ°æœåŠ¡å™¨");
+			tip("could not found server");
 			gLogic:stop();
 			return;
 		end
 		
 		local t = {};
 		for i = 1, #serverList do
-			table.insert(t, serverList[i].data.keepworkUsername .. ":" .. serverList[i].ip);
+			table.insert(t, serverList[i].data.keepworkUsername .. ":" .. serverList[i].ip .. ":" .. serverList[i].data.port);
 		end
 		
-		ask("é€‰æ‹©æœåŠ¡å™¨", t);
+		ask("please select a server:", t);
+		cmd("/connectLobbyClient " .. serverList[answer].ip .. " ".. serverList[answer].data.port)
 	end
 	
 	local function onServerInfo(bSucceed, data, nid)
@@ -48,12 +49,12 @@ function Client:startSearchServer()
 		keepworkUsername	= System.User.keepworkUsername;
 		--projectId			= GameLogic.options.GetProjectId();
 		--version				= GameLogic.options.GetRevision();
-		-- è®¾ç½®ä¸ºtrueçš„è¯ç”¨äºè°ƒè¯•æ—¶å¿½ç•¥ç‰ˆæœ¬å·
+		-- ÉèÖÃÎªtrueµÄ»°ÓÃÓÚµ÷ÊÔÊ±ºöÂÔ°æ±¾ºÅ
 		--editMode			= true;
 	};
 	
 
-	-- å¹¿æ’­åŸå§‹æ•°æ®
+	-- ¹ã²¥Ô­Ê¼Êı¾İ
 	SendNetworkSteam(nil, Desc.request_echo, data);
 end
 
@@ -69,7 +70,7 @@ end
 
 
 function Client:onConnect(userinfo)
-	
+	echo("-----on onConnect")
 end
 
 function Client:onDisconnect(userinfo)
