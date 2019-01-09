@@ -15,9 +15,17 @@ function Server:onEnter()
 	
 	self._netHandles._onRequestEchoHandle = gNetworkDispatcher:addListener(Message.REQUEST_ECHO, function(eventName, data, nid) self:onRequestEcho(data, nid); end);
 	
+	self._netHandles._onRequestLoginHandle = gNetworkDispatcher:addListener(Message.REQUEST_LOGIN, function(eventName, data, nid) self:onRequestLogin(data, nid); end);
+	
 	self._handles._onAppCloseHandle = gDispatcher:addListener("onAppClose", function(eventName) self:onAppClose(); end);
 end
 
+function Server:onRequestLogin(data, nid)
+	self._clients[data.keepworkUsername] = {};
+	self._clients[data.keepworkUsername].nid = nid;
+	SendNetworkSteam(nid, Message.RESPONSE_LOGIN, {});
+end
+	
 function Server:onRequestEcho(data, nid)
 
 	if System.User.keepworkUsername == data.keepworkUsername then
@@ -29,16 +37,16 @@ function Server:onRequestEcho(data, nid)
 	
 	local data =
 	{
-		messageType			= Message.RESPONSE_ECHO;
+		--messageType			= Message.RESPONSE_ECHO;
 		keepworkUsername	= System.User.keepworkUsername;
 		port				= tonumber(info.TCP_PORT);
 	};
 	
-	SendNetworkSteam(nid, Desc.response_echo, data);
+	SendNetworkSteam(nid, Message.RESPONSE_ECHO, data);
 end
 
-function Server:onConnect(userinfo)
-	
+function Server:onConnect(userinfo)	
+	sendNetworkEvent(userinfo.keepworkUsername, "onLogin", {});
 end
 
 function Server:onDisconnect(userinfo)

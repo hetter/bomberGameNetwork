@@ -8,3 +8,7 @@ function g_getSeed()
 	s_seed = s_seed + 1;
 	return s_seed;
 end
+
+function g_getTimer()
+	return os.clock();
+end

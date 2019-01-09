@@ -1,3 +1,5 @@
+include("npl/config.lua");
+
 local sLocalX, sLocalY, sLocalZ = codeblock:GetEntity():GetBlockPos();
 
 local sEdgeId = 69;
@@ -118,8 +120,10 @@ local function saveStageTable(aa, bb)
 			if sRecorder[blockId] ~= nil then
 				recordId = blockId;
 				extData = sRecorder[blockId];
-			elseif blockIdUp ~= 0 then
-				recordId = -1;				
+			elseif Constant.START_POINT[blockId] ~= nil then
+				recordId = blockId;
+			elseif blockIdUp ~= 0 and Constant.CROSS_BLOCK[blockIdUp] == nil then
+				recordId = Constant.GRID_BLOCK;				
 			end			
 			
 			if recordId ~= nil then
@@ -142,8 +146,6 @@ end
 
 local stageTable = saveStageTable(aa, bb)
 
-local st = saveWorldData(getActorValue("name"), stageTable);
-
 local function createScene(stageTable, aa, bb, newAA)
 	
 	
@@ -158,19 +160,26 @@ local function createScene(stageTable, aa, bb, newAA)
 			
 			--echo("-x:" .. addX .. ",z:" .. addZ)
 			setBlock(newAA.x + addX, yy, newAA.z + addZ, blockId);
-			setBlock(newAA.x + addX, yy + 1, newAA.z + addZ, getBlock(xx, yy + 1, zz));
+			
+			local copyUp = 1;
+			local upBlock = getBlock(xx, yy + copyUp, zz);
+			while(upBlock ~= 0) do
+				setBlock(newAA.x + addX, yy + copyUp, newAA.z + addZ, upBlock);
+				copyUp = copyUp + 1;
+				upBlock = getBlock(xx, yy + copyUp, zz);
+			end	
 		end
 	end
 	
 	for i = 1, #stageTable do
 		local gridMsg = stageTable[i]
 		--echo("gridMsg.id:" .. gridMsg.id)
-		if gridMsg.id ~= -1 then
-			if gridMsg.extData.replace ~= 0 then
+		if gridMsg.id ~= Constant.GRID_BLOCK then
+			if gridMsg.extData and gridMsg.extData.replace ~= 0 then
 				setBlock(newAA.x + gridMsg.x, gridMsg.y, newAA.z + gridMsg.z, gridMsg.extData.replace)
 			end
 			
-			if gridMsg.extData.top ~= 0 then
+			if gridMsg.extData and gridMsg.extData.top ~= 0 then
 				setBlock(newAA.x + gridMsg.x, gridMsg.y + 1, newAA.z + gridMsg.z, gridMsg.extData.top)
 			end;	
 		end
@@ -185,5 +194,44 @@ while(x == nil)do
 	x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
 end
 
+local oldStage = loadWorldData(getActorValue("name"));
+if oldStage then
+	if oldStage.startX and oldStage.startY and oldStage.startZ and oldStage.width and oldStage.height then
+		cmd(string.format("/setblock %d %d %d(%d %d %d)0", 
+					oldStage.startX, oldStage.startY, oldStage.startZ, 
+					oldStage.width, 50, oldStage.height));
+	end				
+end					
 
 createScene(stageTable, aa, bb, {x=x, z=z})
+
+--- save work
+local saveTable = {};
+saveTable.startX = x;
+saveTable.startY = y;
+saveTable.startZ = z;
+saveTable.width = bb.x - aa.x;
+saveTable.height = bb.z - aa.z;
+saveTable.map = {};
+saveTable.born = {};
+
+for xx = 1, saveTable.width do
+	saveTable.map[xx] = {};
+	for yy = 1, saveTable.height do
+		saveTable.map[xx][yy] = Constant.GRID_WAY;
+	end
+end
+
+for i = 1, #stageTable do
+	local gridMsg = stageTable[i]
+	--echo("gridMsg.id:" .. gridMsg.id)
+	if gridMsg.id == Constant.GRID_BLOCK then
+		saveTable.map[gridMsg.x][gridMsg.z] = Constant.GRID_BLOCK;
+	elseif Constant.START_POINT[gridMsg.id] ~= nil then
+		saveTable.map[gridMsg.x][gridMsg.z] = Constant.GRID_BORN;
+		saveTable.born[#saveTable.born + 1] = {x = gridMsg.x, y = gridMsg.z};
+	else
+		saveTable.map[gridMsg.x][gridMsg.z] = Constant.GRID_BREAK;
+	end
+end
+local st = saveWorldData(getActorValue("name"), saveTable);

@@ -30,3 +30,13 @@ message.SERVER_FRAME		= 4;
 	udp
 ]]
 message.FRAME_CONFIRM		= 5;
+
+--[[
+	udp
+]]
+message.REQUEST_LOGIN		= 6;
+
+--[[
+	udp
+]]
+message.RESPONSE_LOGIN		= 7;

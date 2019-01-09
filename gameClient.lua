@@ -27,13 +27,15 @@ function Client:startSearchServer()
 		
 		ask("please select a server:", t);
 		cmd("/connectLobbyClient " .. serverList[answer].ip .. " ".. serverList[answer].data.port)
+		
+		self.nowServerData = {data = serverList[answer].data, ip = serverList[answer].ip, nid = serverList[answer].nid};
 	end
 	
 	local function onServerInfo(bSucceed, data, nid)
 		if bSucceed then
 			if data.keepworkUsername ~= System.User.keepworkUsername then
 				local ip, _ = string.match(nid, "~udp(%d+.%d+.%d+.%d+)_(%d+)");
-				table.insert(serverList, {data = data, ip = ip});
+				table.insert(serverList, {data = data, ip = ip, nid = nid});
 			end
 		else
 			gLogic:runOnNextFrame(selectServer);
@@ -45,7 +47,7 @@ function Client:startSearchServer()
 	
 	local data =
 	{
-		messageType			= Message.REQUEST_ECHO;
+		--messageType			= Message.REQUEST_ECHO;
 		keepworkUsername	= System.User.keepworkUsername;
 		--projectId			= GameLogic.options.GetProjectId();
 		--version				= GameLogic.options.GetRevision();
@@ -55,7 +57,7 @@ function Client:startSearchServer()
 	
 
 	-- 广播原始数据
-	SendNetworkSteam(nil, Desc.request_echo, data);
+	SendNetworkSteam(nil, Message.REQUEST_ECHO, data);
 end
 
 function Client:onEnter()
@@ -63,14 +65,28 @@ function Client:onEnter()
 	self._netHandles._onDisconnectHandle = gNetworkDispatcher:addListener("disconnect", function(eventName, userinfo) self:onDisconnect(userinfo); end);
 	
 	self._handles._onAppCloseHandle = gDispatcher:addListener("onAppClose", function(eventName) self:onAppClose(); end);
+	self._netHandles._onResponseLoginHandle = gNetworkDispatcher:addListener(Message.RESPONSE_LOGIN, function(eventName, data, nid) self:onResponseLogin(data, nid); end);	
 	
+	local function onLogin(msg)
+		local data =
+		{
+			keepworkUsername	= System.User.keepworkUsername;
+		}
+		SendNetworkSteam(self.nowServerData.nid, Message.REQUEST_LOGIN, data);
+	end
+	registerNetworkEvent("onLogin", onLogin);
 
 	self:startSearchServer();
 end
 
+function Client:onResponseLogin(data, nid)
+	tip("success login server!")
+	
+	self:goStage(1);
+end	
 
 function Client:onConnect(userinfo)
-	echo("-----on onConnect")
+
 end
 
 function Client:onDisconnect(userinfo)
@@ -103,5 +119,8 @@ function Client:onExit()
 end
 
 function Client:update(dt)
+end
+
+function Client:goStage(stageId)
 	
 end

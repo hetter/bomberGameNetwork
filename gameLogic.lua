@@ -1,3 +1,5 @@
+include("npl/global.lua");
+
 local Logic = inherit(nil, gettable("BM_GameLogic"));
 local actionHost = gettable("BM_ActionHost");
 local actions = gettable("BM_Actions");
@@ -10,12 +12,14 @@ function Logic:ctor()
 end
 
 function Logic:changeState(state)
-	local old = self._state;
 	
+	
+	local old = self._state;
+		
 	if old then
 		old:onExit();
 	end
-	
+		
 	state:onEnter();
 	self._state = state;
 end
@@ -32,11 +36,11 @@ function Logic:stop()
 end
 
 function Logic:run()
-	local currentTime = getTimer();
+	local currentTime = g_getTimer();
 	local oldTime;
 	while(self._bRun) do
 		oldTime = currentTime;
-		currentTime = getTimer();
+		currentTime = g_getTimer();
 		self._state:update(currentTime - oldTime);
 		self._actionHost:update();
 		g_waitOneFrame();

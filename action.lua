@@ -1,3 +1,5 @@
+include("npl/global.lua");
+
 local base = inherit(nil, {});
 
 function base:ctor()
@@ -49,11 +51,11 @@ function delayTime:run()
 	end
 			
 	if not self._endTime then
-		self._endTime = getTimer() + self._t;
+		self._endTime = g_getTimer() + self._t;
 		return true;
 	end
 			
-	return getTimer() < self._endTime;
+	return g_getTimer() < self._endTime;
 end
 
 local sequence = inherit(base, {});
@@ -209,7 +211,7 @@ function moveTo:run()
 		return false;
 	end
 	
-	local curTime = getTimer();
+	local curTime = g_getTimer();
 	local startPos = self._startPos;
 
 	if not self._endTime then
@@ -282,7 +284,7 @@ function moveToActor:run()
 		return false;
 	end
 	
-	local curTime = getTimer();
+	local curTime = g_getTimer();
 	local startPos = self._startPos;
 
 	if not self._endTime then
