@@ -39,3 +39,23 @@ tmp =
 local response_login = Protocol.new();
 response_login:init(tmp);
 desc[Message.RESPONSE_LOGIN] = response_login;
+
+tmp =
+{
+	Protocol.defineDesc("messageType", Protocol.PT_UShort),
+	Protocol.defineDesc("frame", Protocol.PT_UChar),
+	Protocol.defineDesc("input", Protocol.PT_UChar),
+};
+local client_frame = Protocol.new();
+client_frame:init(tmp);
+desc[Message.CLIENT_FRAME] = client_frame;
+
+tmp =
+{
+	Protocol.defineDesc("messageType", Protocol.PT_UShort),
+	Protocol.defineDesc("frame", Protocol.PT_UChar),
+	Protocol.defineDesc("input", Protocol.PT_UChar),
+};
+local server_frame = Protocol.new();
+server_frame:init(tmp);
+desc[Message.SERVER_FRAME] = server_frame;

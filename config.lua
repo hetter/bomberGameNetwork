@@ -37,4 +37,18 @@ Constant =
 	-- 堵塞
 	GRID_BLOCK = 3;
 	
+	-- 玩家控制键
+	KEY_PLAYER_FORWARD			= "up";
+	KEY_PLAYER_BACK			    = "down";
+	KEY_PLAYER_LEFT			    = "left";
+	KEY_PLAYER_RIGHT			= "right";
+	KEY_PLAYER_BOMBER			= "space";
+	
+	PLAYER_MOV_SPD = 3;
+	
+	MOV_DIR_NULL 		= 0;
+	MOV_DIR_FORWARD 	= 1;
+	MOV_DIR_BACK		= 2;
+	MOV_DIR_LEFT 		= 3;
+	MOV_DIR_RIGHT 		= 4;
 };

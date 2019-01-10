@@ -7,40 +7,23 @@ gNetworkDispatcher = eventDispatcher.new();
 
 local callbacks = {};
 
-callbacks[Message.REQUEST_ECHO] = function(stream, nid)
-	if gNetworkDispatcher:hasEvent(Message.REQUEST_ECHO) then
-		local pt_reader = Desc[Message.REQUEST_ECHO];
-		local data = pt_reader:readStream(stream);
-		
-		gNetworkDispatcher:dispatchEvent(Message.REQUEST_ECHO, data, nid);
-	end
-end
+local function _addEventCallback(msgType)
+	callbacks[msgType] = function(stream, nid)
+		if gNetworkDispatcher:hasEvent(msgType) then
+			local pt_reader = Desc[msgType];
+			local data = pt_reader:readStream(stream);
+			gNetworkDispatcher:dispatchEvent(msgType, data, nid);
+		end
+	end	
+end	
 
-callbacks[Message.RESPONSE_ECHO] = function(stream, nid)
-	if gNetworkDispatcher:hasEvent(Message.RESPONSE_ECHO) then
-		local pt_reader = Desc[Message.RESPONSE_ECHO];
-		local data = pt_reader:readStream(stream);
-		
-		gNetworkDispatcher:dispatchEvent(Message.RESPONSE_ECHO, data, nid);
-	end
-end
+_addEventCallback(Message.REQUEST_ECHO);
+_addEventCallback(Message.RESPONSE_ECHO);
+_addEventCallback(Message.REQUEST_LOGIN);
+_addEventCallback(Message.RESPONSE_LOGIN);
+_addEventCallback(Message.CLIENT_FRAME);
+_addEventCallback(Message.SERVER_FRAME);
 
-callbacks[Message.REQUEST_LOGIN] = function(stream, nid)
-	if gNetworkDispatcher:hasEvent(Message.REQUEST_LOGIN) then
-		local pt_reader = Desc[Message.REQUEST_LOGIN];
-		local data = pt_reader:readStream(stream);
-		
-		gNetworkDispatcher:dispatchEvent(Message.REQUEST_LOGIN, data, nid);
-	end
-end
-
-callbacks[Message.RESPONSE_LOGIN] = function(stream, nid)
-	if gNetworkDispatcher:hasEvent(Message.RESPONSE_LOGIN) then
-		local pt_reader = Desc[Message.RESPONSE_LOGIN];
-		local data = pt_reader:readStream(stream);
-		gNetworkDispatcher:dispatchEvent(Message.RESPONSE_LOGIN, data, nid);
-	end
-end
 
 -- 这里接收的都是原始数据流， 只有udp才能使用， 所以isUDP永远是true
 local function onNetMsg(msg)
@@ -96,6 +79,22 @@ local function onDisconnect(msg)
 	gNetworkDispatcher:dispatchEvent("disconnect", msg.userinfo);
 end
 
+local function onTcpMessage(msg)
+	if msg and msg[1] then
+		local messageType = msg[1];
+		table.remove(msg, 1);
+		gNetworkDispatcher:dispatchEvent(messageType, msg);
+	end
+end	
+
+function SendTcpSteam(addr, msgType, msg)
+	
+	if msg then
+		table.insert(msg, 1, msgType);
+		sendNetworkEvent(addr, "tcp_message", msg);
+	end	
+end
+
 function SendNetworkSteam(addr, messageType, data)
 	data.messageType = messageType;
 	local writer = Desc[messageType];
@@ -111,6 +110,7 @@ function StartBMNetwork()
 	registerNetworkEvent("__original", onNetMsg);
 	registerNetworkEvent("connect", onConnect);
 	registerNetworkEvent("disconnect", onDisconnect);
+	registerNetworkEvent("tcp_message", onTcpMessage);
 end
 
 

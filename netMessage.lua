@@ -40,3 +40,15 @@ message.REQUEST_LOGIN		= 6;
 	udp
 ]]
 message.RESPONSE_LOGIN		= 7;
+
+---------------------------------------------
+
+--[[
+	tcp
+]]
+message.LOGIN_INFO = 101;
+
+--[[
+	tcp
+]]
+message.READY_STAGE = 102;

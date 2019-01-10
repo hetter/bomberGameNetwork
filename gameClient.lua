@@ -2,15 +2,16 @@ local State = gettable("BM_GameState");
 local Client = inherit(State, gettable("BM_GameClient"));
 local Message = gettable("BM_NetMessage");
 local Desc = gettable("BM_ProtocolDesc");
+local GameMain = gettable("BM_GameMain");
 
 function Client:ctor()
 	self._server = nil;
 	self._handles = {};
 	self._netHandles = {};
+	self._gameMain = GameMain.new();
 end
 
 function Client:startSearchServer()
-	
 	local serverList = {};
 	
 	local function selectServer()
@@ -60,29 +61,40 @@ function Client:startSearchServer()
 	SendNetworkSteam(nil, Message.REQUEST_ECHO, data);
 end
 
+function Client:onLogin(msg)
+	local data =
+	{
+		keepworkUsername	= System.User.keepworkUsername;
+	}
+	SendNetworkSteam(self.nowServerData.nid, Message.REQUEST_LOGIN, data);
+end
+
+function Client:onStage(msg)
+	self._gameMain:init(self.nowServerData, msg[1], msg[2]);
+	self._gameMain:goStage(1);
+end
+
 function Client:onEnter()
 	self._netHandles._onConnectHandle = gNetworkDispatcher:addListener("connect", function(eventName, userinfo) self:onConnect(userinfo); end);
 	self._netHandles._onDisconnectHandle = gNetworkDispatcher:addListener("disconnect", function(eventName, userinfo) self:onDisconnect(userinfo); end);
 	
 	self._handles._onAppCloseHandle = gDispatcher:addListener("onAppClose", function(eventName) self:onAppClose(); end);
-	self._netHandles._onResponseLoginHandle = gNetworkDispatcher:addListener(Message.RESPONSE_LOGIN, function(eventName, data, nid) self:onResponseLogin(data, nid); end);	
+	self._netHandles._onResponseLoginHandle = gNetworkDispatcher:addListener(Message.RESPONSE_LOGIN, function(eventName, data, nid) self:onResponseLogin(data, nid); end);
 	
-	local function onLogin(msg)
-		local data =
-		{
-			keepworkUsername	= System.User.keepworkUsername;
-		}
-		SendNetworkSteam(self.nowServerData.nid, Message.REQUEST_LOGIN, data);
-	end
-	registerNetworkEvent("onLogin", onLogin);
-
+	self._netHandles._onResponseLoginHandle = gNetworkDispatcher:addListener(Message.LOGIN_INFO, function(eventName, data) self:onLogin(data); end);
+	self._netHandles._onResponseLoginHandle = gNetworkDispatcher:addListener(Message.READY_STAGE, function(eventName, data) self:onStage(data); end);
+	
+	self._netHandles._onRequestLoginHandle = gNetworkDispatcher:addListener(Message.SERVER_FRAME, function(eventName, data, nid) self:onServerFrame(data, nid); end);
+	
 	self:startSearchServer();
 end
 
+function Client:onServerFrame(data, nid)
+	self._testframeData = data;
+end	
+
 function Client:onResponseLogin(data, nid)
 	tip("success login server!")
-	
-	self:goStage(1);
 end	
 
 function Client:onConnect(userinfo)
@@ -119,8 +131,6 @@ function Client:onExit()
 end
 
 function Client:update(dt)
-end
-
-function Client:goStage(stageId)
-	
+	self._gameMain:updateInput(self._testframeData);
+	self._gameMain:update(dt);
 end
