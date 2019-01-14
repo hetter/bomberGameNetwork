@@ -22,8 +22,9 @@ _addEventCallback(Message.RESPONSE_ECHO);
 _addEventCallback(Message.REQUEST_LOGIN);
 _addEventCallback(Message.RESPONSE_LOGIN);
 _addEventCallback(Message.CLIENT_FRAME);
+_addEventCallback(Message.CLIENT_FRAME_CONFIRM);
 _addEventCallback(Message.SERVER_FRAME);
-
+_addEventCallback(Message.SERVER_FRAME_CONFIRM);
 
 -- 这里接收的都是原始数据流， 只有udp才能使用， 所以isUDP永远是true
 local function onNetMsg(msg)

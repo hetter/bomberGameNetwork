@@ -43,8 +43,8 @@ desc[Message.RESPONSE_LOGIN] = response_login;
 tmp =
 {
 	Protocol.defineDesc("messageType", Protocol.PT_UShort),
-	Protocol.defineDesc("frame", Protocol.PT_UChar),
-	Protocol.defineDesc("input", Protocol.PT_UChar),
+	-- key:客户端帧数，value:客户端输入
+	Protocol.defineDesc("input_map", Protocol.PT_Map(Protocol.PT_UInt, Protocol.PT_UShort)),	
 };
 local client_frame = Protocol.new();
 client_frame:init(tmp);
@@ -53,9 +53,29 @@ desc[Message.CLIENT_FRAME] = client_frame;
 tmp =
 {
 	Protocol.defineDesc("messageType", Protocol.PT_UShort),
-	Protocol.defineDesc("frame", Protocol.PT_UChar),
-	Protocol.defineDesc("input", Protocol.PT_UChar),
+	Protocol.defineDesc("frame", Protocol.PT_UInt),
+	Protocol.defineDesc("input_map_array_array", Protocol.PT_MiniArray(Protocol.PT_MiniArray(Protocol.PT_Map(Protocol.PT_UInt, Protocol.PT_UShort)))),	
 };
 local server_frame = Protocol.new();
 server_frame:init(tmp);
 desc[Message.SERVER_FRAME] = server_frame;
+
+tmp =
+{
+	Protocol.defineDesc("messageType", Protocol.PT_UShort),
+	Protocol.defineDesc("frame", Protocol.PT_UInt),
+};
+local server_frame_confirm = Protocol.new();
+server_frame_confirm:init(tmp);
+desc[Message.SERVER_FRAME_CONFIRM] = server_frame_confirm;
+
+tmp =
+{
+	Protocol.defineDesc("messageType", Protocol.PT_UShort),
+	Protocol.defineDesc("frame", Protocol.PT_UInt),
+};
+local client_frame_confirm = Protocol.new();
+client_frame_confirm:init(tmp);
+desc[Message.CLIENT_FRAME_CONFIRM] = client_frame_confirm;
+
+

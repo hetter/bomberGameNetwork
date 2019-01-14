@@ -86,11 +86,17 @@ function Client:onEnter()
 	
 	self._netHandles._onRequestLoginHandle = gNetworkDispatcher:addListener(Message.SERVER_FRAME, function(eventName, data, nid) self:onServerFrame(data, nid); end);
 	
+	self._netHandles._onRequestLoginHandle = gNetworkDispatcher:addListener(Message.CLIENT_FRAME_CONFIRM, function(eventName, data, nid) self:onFrameConfirm(data, nid); end);
+	
 	self:startSearchServer();
 end
 
 function Client:onServerFrame(data, nid)
-	self._testframeData = data;
+	self._gameMain:receiveServerFrameMsg(data);
+end	
+
+function Client:onFrameConfirm(data, nid)
+	self._gameMain:onFrameConfirm(data.frame);
 end	
 
 function Client:onResponseLogin(data, nid)
@@ -131,6 +137,5 @@ function Client:onExit()
 end
 
 function Client:update(dt)
-	self._gameMain:updateInput(self._testframeData);
 	self._gameMain:update(dt);
 end

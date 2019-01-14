@@ -50,11 +50,11 @@ function Protocol.defineDesc(name, valueType, default, isLocal, checkValue)
 end
 
 -- 自定义类型
-function Protocol.PT_Custom(name, readFunc, customData)
+function Protocol.PT_Custom(name, readFunc, customData, writeFunc)
 	assert(name, "key值不能为空");
 	assert(readFunc, "readFunc不能为空");
 	assert(customData, "customData不能为空");
-	return {name = name; readFunc = readFunc; customData = customData};
+	return {name = name; readFunc = readFunc; writeFunc = writeFunc; customData = customData};
 end
 
 -- map
@@ -72,7 +72,21 @@ function Protocol.PT_Map(keyType, valueType)
 		return result;
 	end
 	
-	return Protocol.PT_Custom("PT_Map", readFunc, {keyType = keyType; valueType = valueType});
+	local function writeFunc(stream, customData, writeValue)
+		local mapArray = {};
+		for key, value in pairs(writeValue) do
+			mapArray[#mapArray + 1] = {key = key, value = value};
+		end
+		
+		local len = #mapArray;
+		stream:WriteUShort(len);
+		for i = 1, len do
+			local _t = mapArray[i];
+			Protocol._writeStream(stream, customData.keyType, _t.key)
+			Protocol._writeStream(stream, customData.valueType, _t.value)
+		end	
+	end	
+	return Protocol.PT_Custom("PT_Map", readFunc, {keyType = keyType; valueType = valueType}, writeFunc);
 end
 
 -- array
@@ -88,7 +102,16 @@ function Protocol.PT_Array(valueType)
 		
 		return result;
 	end
-	return Protocol.PT_Custom("PT_Array", readFunc, {valueType = valueType});
+	
+	local function writeFunc(stream, customData, writeValue)
+		local len = #writeValue;
+		stream:WriteUShort(len);
+		for i = 1, len do
+			local aeWriteValue = writeValue[i];
+			Protocol._writeStream(stream, customData.valueType, aeWriteValue)
+		end
+	end
+	return Protocol.PT_Custom("PT_Array", readFunc, {valueType = valueType}, writeFunc);
 end
 
 -- 短数组
@@ -104,7 +127,16 @@ function Protocol.PT_MiniArray(valueType)
 		
 		return result;
 	end
-	return Protocol.PT_Custom("PT_MiniArray", readFunc, {valueType = valueType});
+	
+	local function writeFunc(stream, customData, writeValue)
+		local len = #writeValue;
+		stream:WriteByte(len);
+		for i = 1, len do
+			local aeWriteValue = writeValue[i];
+			Protocol._writeStream(stream, customData.valueType, aeWriteValue)
+		end
+	end	
+	return Protocol.PT_Custom("PT_MiniArray", readFunc, {valueType = valueType}, writeFunc);
 end
 
 
@@ -312,6 +344,10 @@ function Protocol._readCustom(stream, valueType, name, isDebug)
 	return valueType.readFunc(stream, valueType.customData, name, isDebug);
 end
 
+function Protocol._writeCustom(stream, valueType, writeValue)
+	return valueType.writeFunc(stream, valueType.customData, writeValue);
+end
+
 -- 读取一个64位整型
 function Protocol._readLLong(stream)
 	assert(false, "暂时没实现， 到时再说");
@@ -389,6 +425,10 @@ function Protocol._writeStream(stream, valueType, writeValue)
 		local len = string.len(writeValue);
 		stream:WriteUInt(len);
 		return stream:WriteString(writeValue);
+	elseif type(valueType) == "table" then
+		if valueType.name then
+			value = Protocol._writeCustom(stream, valueType, writeValue);
+		end	
 	end	
 end
 

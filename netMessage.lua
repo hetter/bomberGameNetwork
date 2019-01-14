@@ -29,17 +29,22 @@ message.SERVER_FRAME		= 4;
 --[[
 	udp
 ]]
-message.FRAME_CONFIRM		= 5;
+message.CLIENT_FRAME_CONFIRM		= 5;
 
 --[[
 	udp
 ]]
-message.REQUEST_LOGIN		= 6;
+message.SERVER_FRAME_CONFIRM		= 6;
 
 --[[
 	udp
 ]]
-message.RESPONSE_LOGIN		= 7;
+message.REQUEST_LOGIN		= 7;
+
+--[[
+	udp
+]]
+message.RESPONSE_LOGIN		= 8;
 
 ---------------------------------------------
 

@@ -1,11 +1,19 @@
 local GameMain = inherit(nil, gettable("BM_GameMain"));
 local Message = gettable("BM_NetMessage");
 local Desc = gettable("BM_ProtocolDesc");
-
 function GameMain:ctor()
 	self._players = {};
 	self._tick_tock = 0;
 	self._playerInx = 0;
+	
+	self._myInput = {};
+	self._myInput.dir = Constant.MOV_DIR_NULL;
+	self._myInput.isPutBomb = 0;	
+
+	self._clientConfirmFrame = 0; 	-- 服务器确认过的客户端帧
+	self._serverConfirmFrame = 0;	-- 当前的服务器确认帧
+	self._clientFrame = 0; 			-- 当前客户端帧
+	self._sendDataPool = {};
 end
 
 function GameMain:init(serverData, playerInx, playerList)
@@ -21,6 +29,10 @@ end
 
 function GameMain:onDisconnect(userinfo)
 	
+end
+
+function GameMain:onFrameConfirm(confirmFrame)
+	self._clientConfirmFrame = confirmFrame;
 end
 
 local function packInput(myInput, playerInx)
@@ -54,7 +66,7 @@ function GameMain:processInput(dt)
 		if _clientPlayer == nil then
 			return
 		end	
-		local myInput = _clientPlayer.input;
+		local myInput = self._myInput;--_clientPlayer.input;
 		local oldDir = myInput.dir;
 		local oldPut = myInput.isPutBomb;
 		if isKeyPressed(Constant.KEY_PLAYER_FORWARD) then
@@ -75,29 +87,104 @@ function GameMain:processInput(dt)
 			myInput.isPutBomb = 0;
 		end	
 		
-		if(oldDir ~= myInput.dir) or (oldPut ~= myInput.isPutBomb) then
-			-- send msg
+		self._clientFrame = self._clientFrame + 1;
+		
+		local frameInput;
+		if(oldDir ~= myInput.dir) or (oldPut ~= myInput.isPutBomb) then			
+			frameInput = packInput(myInput, self._playerInx);
+			self._sendDataPool[#self._sendDataPool + 1] = {frame = self._clientFrame, input = frameInput};
+			if #self._sendDataPool > Constant.CLIENT_SEND_QUEUE_SIZE then
+				table.remove(self._sendDataPool, 1);
+			end
+		end
+
+		-- send msg
+		local subFrame = self._clientFrame - self._clientConfirmFrame;
+		local inputMap = {};
+		for _, v in ipairs(self._sendDataPool) do
+			if v.frame > self._clientConfirmFrame then
+				inputMap[v.frame] = v.input;
+			end
+		end
+	
+		if(next(inputMap))then
 			local data =
 			{
-				frame = 0;
-				input = packInput(myInput, self._playerInx);
-			}
-			
-			if self._serverData.nid then
+				input_map	= inputMap;
+			}			
+			if self._serverData.nid then				
 				SendNetworkSteam(self._serverData.nid, Message.CLIENT_FRAME, data);
 			else
-				self._serverData:addFrameData(data);
-			end
+				self._serverData:onClientFrame(data, 0);
+			end	
 		end
 	end	
 	
 	self._tick_tock = self._tick_tock + dt;
-	local interval = 1.0/30.0;
+	local interval = 1.0 / Constant.CLIENT_FPS;
 	if self._tick_tock >= interval then
 		process();
 		self._tick_tock = self._tick_tock - interval;
 	end
+end
+
+function GameMain:receiveServerFrameMsg(frameData)
+	if(frameData.frame > self._serverConfirmFrame) then
+		local subFrame = frameData.frame - self._serverConfirmFrame;
+		local processInputs = {};
+		for i = 0, subFrame - 1 do
+			processInputs[frameData.frame - i] = frameData.input_map_array_array[i + 1];
+		end	
+		
+		self._serverConfirmFrame = frameData.frame;
+		
+		local data =
+		{
+			frame	= frameData.frame;
+		}			
+		if self._serverData.nid then	
+			SendNetworkSteam(self._serverData.nid, Message.SERVER_FRAME_CONFIRM, data);
+		else
+			self._serverData:onFrameConfirm(data, 0);
+		end	
+		
+		self:updateServerInputs(processInputs);
+	end
+
 end	
+
+function GameMain:updateServerInputs(processInputs)
+	local function pairsByKeys(t)
+		local a = {}
+		for n in pairs(t) do a[#a + 1] = n end
+		table.sort(a)
+		local i = 0
+		return function ()
+			i = i + 1
+			return a[i], t[a[i]]
+		end
+	end
+	
+	for serverFrame, input_map_array in pairsByKeys(processInputs) do
+		local input_map_array = processInputs[serverFrame];
+		for _, input_map in ipairs(input_map_array) do
+			for clientFrame, inputData in pairsByKeys(input_map) do
+				self:updateInput(inputData);
+			end
+		end
+	end
+	
+end
+
+function GameMain:updateInput(inputData)
+	if inputData then
+		local inputT = unpackInput(inputData);
+		local player = self._players[inputT.playInx + 1];
+		if player then
+			player.input.dir = inputT.dir;
+		end			
+	end
+end
 
 function GameMain:updatePlayer(dt)
 	for _, player in ipairs(self._players) do
@@ -121,16 +208,6 @@ function GameMain:updatePlayer(dt)
 				end	
 			end)
 		end
-	end
-end
-
-function GameMain:updateInput(frameData)
-	if frameData then
-		local inputData = unpackInput(frameData.input);
-		local player = self._players[inputData.playInx + 1];
-		if player then
-			player.input.dir = inputData.dir;
-		end			
 	end
 end
 
