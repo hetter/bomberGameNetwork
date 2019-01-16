@@ -59,18 +59,6 @@ local client_frame = Protocol.new();
 client_frame:init(tmp);
 desc[Message.CLIENT_FRAME] = client_frame;
 
-
-frameInfo =
-{
-	Protocol.defineDesc("frame", Protocol.PT_UInt),
-	Protocol.defineDesc("input", Protocol.PT_MiniArray(Protocol.PT_UShort)),
-}
-
-{
-	Protocol.defineDesc("inputDatas_array_array", Protocol.PT_MiniArray(frameInfo))
-}
-
-
 tmp =
 {
 	Protocol.defineDesc("messageType", Protocol.PT_UShort),
