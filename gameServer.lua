@@ -50,16 +50,6 @@ function Server:onRequestLogin(data, nid)
 		local uiList_tb = getActorValue("_tb");
 		uiList_tb.addPlayer(data.keepworkUsername);
 	end)
-	
-	--[[
-	if not self.testCCC then
-		self.testCCC = 0;
-	end	
-	self.testCCC = self.testCCC + 1;
-	if self.testCCC >= 2 then
-		self:startStage(1);
-	end	
-	]]
 end
 
 function Server:startStage(stageId)
@@ -103,14 +93,9 @@ end
 function Server:onClientFrame(data, nid)
 	local c = self._clients[nid];
 	if c then
-		local maxFrame = - 1;
-		for f, _ in pairs(data.input_map) do
-			if f > maxFrame then
-				maxFrame = f;
-			end
-		end
+		local maxFrame = data.inputDatas[#data.inputDatas].frame;
 		if(maxFrame > c.clientConfirmFrame) then
-			c.frameDataList[#c.frameDataList + 1] = data.input_map;
+			c.frameDataList[#c.frameDataList + 1] = data.inputDatas;
 			c.clientConfirmFrame = maxFrame;
 			
 			if nid == 0 then
@@ -185,43 +170,59 @@ function Server:removeAllClients()
 	self._clients = {};
 end
 
+local function pairsByKeys(t)
+    local a = {}
+    for n in pairs(t) do a[#a + 1] = n end
+    table.sort(a)
+    local i = 0
+    return function ()
+        i = i + 1
+        return a[i], t[a[i]]
+    end
+end
+
 function Server:processFrame(dt)
 	if self._isInStage == false then
 		return;
 	end	
 	
 	local function process()
-		local input_map_array = {};
+		local inputDatas_array = {};
 		for nid, client in pairs(self._clients) do
 			local fd = client.frameDataList;
-			local inputMap = {};
+			local inputDatas = {};
+			local inputMaps = {};
 			for i = 1, #fd do
-				for ff, inp in pairs(fd[i]) do
-					inputMap[ff] = inp;
+				for ff, inp in ipairs(fd[i]) do
+					inputMaps[inp.frame] = inp.input;
 				end
 			end
-			input_map_array[#input_map_array + 1] = inputMap;
+			for frame, input in pairsByKeys(inputMaps) do
+				inputDatas[#inputDatas + 1] = {frame = frame, input = input};
+			end
+			inputDatas_array[#inputDatas_array + 1] = inputDatas;
+			client.frameDataList = {};
 		end
-		self._sendDataPool[#self._sendDataPool + 1] = input_map_array;
+		self._sendDataPool[#self._sendDataPool + 1] = inputDatas_array;
 		if #self._sendDataPool > Constant.SERVER_SEND_QUEUE_SIZE then
 			table.remove(self._sendDataPool, 1);
 		end
 
 		for nid, client in pairs(self._clients) do
-			local input_map_array_array = {};
+			local inputDatas_array_array = {};
 			
 			local subFrame = self._serverFrame - client.serverConfirmFrame;
 			
 			if subFrame <= #self._sendDataPool then
 				for i = 0, subFrame - 1 do
-					input_map_array_array[#input_map_array_array + 1] = self._sendDataPool[#self._sendDataPool - i];
+					inputDatas_array_array[#inputDatas_array_array + 1] = self._sendDataPool[#self._sendDataPool - i];
 				end
-			end
+			end	
 			
 			local sendDatas = 
 			{
 				frame = self._serverFrame;
-				input_map_array_array = input_map_array_array;
+				inputDatas_array_array = inputDatas_array_array;
 			};
 			
 			if nid == 0 then

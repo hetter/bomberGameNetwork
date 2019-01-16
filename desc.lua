@@ -40,21 +40,46 @@ local response_login = Protocol.new();
 response_login:init(tmp);
 desc[Message.RESPONSE_LOGIN] = response_login;
 
+
+-- frame:客户端帧数，input:客户端输入
+local frameInfo = 
+{
+	Protocol.defineDesc("frame", Protocol.PT_UInt),
+	Protocol.defineDesc("input", Protocol.PT_UShort),
+}
+local frameInfoVO = Protocol.new();
+frameInfoVO:init(frameInfo);
+
 tmp =
 {
 	Protocol.defineDesc("messageType", Protocol.PT_UShort),
-	-- key:客户端帧数，value:客户端输入
-	Protocol.defineDesc("input_map", Protocol.PT_Map(Protocol.PT_UInt, Protocol.PT_UShort)),	
+	Protocol.defineDesc("inputDatas", Protocol.PT_MiniArray(frameInfoVO)),	
 };
 local client_frame = Protocol.new();
 client_frame:init(tmp);
 desc[Message.CLIENT_FRAME] = client_frame;
 
+
+frameInfo =
+{
+	Protocol.defineDesc("frame", Protocol.PT_UInt),
+	Protocol.defineDesc("input", Protocol.PT_MiniArray(Protocol.PT_UShort)),
+}
+
+{
+	Protocol.defineDesc("inputDatas_array_array", Protocol.PT_MiniArray(frameInfo))
+}
+
+
 tmp =
 {
 	Protocol.defineDesc("messageType", Protocol.PT_UShort),
 	Protocol.defineDesc("frame", Protocol.PT_UInt),
-	Protocol.defineDesc("input_map_array_array", Protocol.PT_MiniArray(Protocol.PT_MiniArray(Protocol.PT_Map(Protocol.PT_UInt, Protocol.PT_UShort)))),	
+	-- 数组 
+	-- 1）服务器帧数
+	-- 2）玩家数量
+	-- 3）玩家帧数
+	Protocol.defineDesc("inputDatas_array_array", Protocol.PT_MiniArray(Protocol.PT_MiniArray(Protocol.PT_MiniArray(frameInfoVO)))),	
 };
 local server_frame = Protocol.new();
 server_frame:init(tmp);

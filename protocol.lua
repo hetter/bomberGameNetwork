@@ -246,71 +246,74 @@ end
 function Protocol:createStream(writeTable)
 	local stream = ParaIO.open("<memory>", "w");
 	if(stream:IsValid()) then	
-		local function doWrite(stream, valueType, wv)
-			if notTop or isDebug then
-				Protocol._writeStream(stream, valueType, wv);
-			else
-				try 
-				{
-					function()
-						Protocol._writeStream(stream, valueType, wv);
-					end;
-					
-					function()
-						try
-						{									
-							function(msg)
-								__G__TRACKBACK__(msg);
-								bStop = true;
-							end
-						}
-					end
-				};
-			end
-		end	
-		
-		local desc = self.mDesc;
-		local bitMark = 0;
-		local writeList = {};
-		for index, v in ipairs(desc) do
-			local valueType = v.valueType;
-			local name = v.name;
-			local bStop = false;
-			
-			if (writeTable[name]) then
-				if self.mDymanicType then
-					--local bit = mathlib.bit;
-					local writeMark = bit.lshift(1,index);
-					bitMark = bit.bxor(bitMark, writeMark);
-					writeList[#writeList + 1] = {tt = valueType, ww = writeTable[name]};
-				else	
-					if not v.isLocal then
-						doWrite(stream, valueType, writeTable[name]);
-					end	
-				end				
-			else
-				if not self.mDymanicType then
-					commonlib.echo("mDymanicTypemDymanicTypemDymanicTypemDymanicTypemDymanicType")
-					bStop = true;
-				end	
-			end
-			
-			if bStop then
-				commonlib.echo("bStopbStopbStopbStopbStopbStopbStopbStop")
-				stream:close();
-				return nil;
-			end
-		end
-		
-		if self.mDymanicType then
-			Protocol._writeStream(stream, self.mDymanicType, bitMark);
-			for index, v in ipairs(writeList) do
-				Protocol._writeStream(stream, v.tt, v.ww);
-			end
-		end
-		
+		self:writeStream(stream, writeTable);
 		stream:seek(0);
 		return stream;
+	end
+end
+
+function Protocol:writeStream(stream, writeTable)
+	local function doWrite(stream, valueType, wv)
+		if notTop or isDebug then
+			Protocol._writeStream(stream, valueType, wv);
+		else
+			try 
+			{
+				function()
+					Protocol._writeStream(stream, valueType, wv);
+				end;
+				
+				function()
+					try
+					{									
+						function(msg)
+							__G__TRACKBACK__(msg);
+							bStop = true;
+						end
+					}
+				end
+			};
+		end
+	end	
+	
+	local desc = self.mDesc;
+	local bitMark = 0;
+	local writeList = {};
+	for index, v in ipairs(desc) do
+		local valueType = v.valueType;
+		local name = v.name;
+		local bStop = false;
+		
+		if (writeTable[name]) then
+			if self.mDymanicType then
+				--local bit = mathlib.bit;
+				local writeMark = bit.lshift(1,index);
+				bitMark = bit.bxor(bitMark, writeMark);
+				writeList[#writeList + 1] = {tt = valueType, ww = writeTable[name]};
+			else	
+				if not v.isLocal then
+					doWrite(stream, valueType, writeTable[name]);
+				end	
+			end				
+		else
+			if not self.mDymanicType then
+				commonlib.echo("mDymanicTypemDymanicTypemDymanicTypemDymanicTypemDymanicType:" .. name)
+				bStop = true;
+			end	
+		end
+		
+		if bStop then
+			commonlib.echo("bStopbStopbStopbStopbStopbStopbStopbStop:" .. name)
+			stream:close();
+			return nil;
+		end
+	end
+	
+	if self.mDymanicType then
+		Protocol._writeStream(stream, self.mDymanicType, bitMark);
+		for index, v in ipairs(writeList) do
+			Protocol._writeStream(stream, v.tt, v.ww);
+		end
 	end
 end	
 
@@ -428,6 +431,8 @@ function Protocol._writeStream(stream, valueType, writeValue)
 	elseif type(valueType) == "table" then
 		if valueType.name then
 			value = Protocol._writeCustom(stream, valueType, writeValue);
+		elseif valueType.writeStream then
+			valueType.writeStream(valueType, stream, writeValue);	
 		end	
 	end	
 end
