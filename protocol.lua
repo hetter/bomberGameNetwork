@@ -417,16 +417,13 @@ function Protocol._writeStream(stream, valueType, writeValue)
 	elseif valueType == Protocol.PT_Double then
 		return stream:WriteDouble(writeValue);
 	elseif valueType == Protocol.PT_MiniString then
-		local len = string.len(writeValue);
-		stream:WriteByte(len);
+		stream:WriteByte(#writeValue);
 		return stream:WriteString(writeValue);
 	elseif valueType == Protocol.PT_String then
-		local len = string.len(writeValue);
-		stream:WriteShort(len);
+		stream:WriteShort(#writeValue);
 		return stream:WriteString(writeValue);
 	elseif valueType == Protocol.PT_LargeString then
-		local len = string.len(writeValue);
-		stream:WriteUInt(len);
+		stream:WriteUInt(#writeValue);
 		return stream:WriteString(writeValue);
 	elseif type(valueType) == "table" then
 		if valueType.name then
