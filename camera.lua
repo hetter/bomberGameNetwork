@@ -1,3 +1,5 @@
+cmd("/lod off");
+
 function initCamera(stage)
 	setPos(stage.startX + stage.width/2.0, stage.startY + 30.0, stage.startZ + stage.height/2.0);	
 	camera(12, 80, 270);

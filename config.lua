@@ -36,6 +36,8 @@ Constant =
 	GRID_BREAK = 2;
 	-- 堵塞
 	GRID_BLOCK = 3;
+	-- 炸弹
+	GRID_BOMB = 4;	
 	
 	-- 玩家控制键
 	KEY_PLAYER_FORWARD			= "up";
@@ -44,7 +46,7 @@ Constant =
 	KEY_PLAYER_RIGHT			= "right";
 	KEY_PLAYER_BOMBER			= "space";
 	
-	PLAYER_MOV_SPD = 3;
+	PLAYER_MOVE_GRID_TIME = 0.1;
 	
 	MOV_DIR_NULL 		= 0;
 	MOV_DIR_FORWARD 	= 1;

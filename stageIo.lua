@@ -147,7 +147,7 @@ end
 local stageTable = saveStageTable(aa, bb)
 
 local function createScene(stageTable, aa, bb, newAA)
-	
+	local tmpId;
 	
 	local yy = aa.y;
 	for zz = aa.z + 1, bb.z - 1 do
@@ -159,12 +159,18 @@ local function createScene(stageTable, aa, bb, newAA)
 			local addZ = zz - aa.z;
 			
 			--echo("-x:" .. addX .. ",z:" .. addZ)
-			setBlock(newAA.x + addX, yy, newAA.z + addZ, blockId);
+			tmpId = getBlock(newAA.x + addX, yy, newAA.z + addZ);
+			if(tmpId ~= blockId) then
+				setBlock(newAA.x + addX, yy, newAA.z + addZ, blockId);
+			end
 			
 			local copyUp = 1;
 			local upBlock = getBlock(xx, yy + copyUp, zz);
 			while(upBlock ~= 0) do
-				setBlock(newAA.x + addX, yy + copyUp, newAA.z + addZ, upBlock);
+				tmpId = getBlock(newAA.x + addX, yy + copyUp, newAA.z + addZ);
+				if(tmpId ~= upBlock)then
+					setBlock(newAA.x + addX, yy + copyUp, newAA.z + addZ, upBlock);
+				end	
 				copyUp = copyUp + 1;
 				upBlock = getBlock(xx, yy + copyUp, zz);
 			end	
@@ -176,24 +182,39 @@ local function createScene(stageTable, aa, bb, newAA)
 		--echo("gridMsg.id:" .. gridMsg.id)
 		if gridMsg.id ~= Constant.GRID_BLOCK then
 			if gridMsg.extData and gridMsg.extData.replace ~= 0 then
-				setBlock(newAA.x + gridMsg.x, gridMsg.y, newAA.z + gridMsg.z, gridMsg.extData.replace)
+				tmpId = getBlock(newAA.x + gridMsg.x, gridMsg.y, newAA.z + gridMsg.z);
+				if(tmpId ~= gridMsg.extData.replace)then
+					setBlock(newAA.x + gridMsg.x, gridMsg.y, newAA.z + gridMsg.z, gridMsg.extData.replace)
+				end	
 			end
 			
 			if gridMsg.extData and gridMsg.extData.top ~= 0 then
-				setBlock(newAA.x + gridMsg.x, gridMsg.y + 1, newAA.z + gridMsg.z, gridMsg.extData.top)
+				tmpId = getBlock(newAA.x + gridMsg.x, gridMsg.y + 1, newAA.z + gridMsg.z);
+				if(tmpId ~= gridMsg.extData.top)then
+					setBlock(newAA.x + gridMsg.x, gridMsg.y + 1, newAA.z + gridMsg.z, gridMsg.extData.top)
+				end	
 			end;	
 		end
 	end
 end
 
-ask("请输入开始坐标")
-local x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
-
-while(x == nil)do
-	ask("请输入正确格式（数字坐标x 数字坐标y 数字坐标z）")
+local x, y, z;
+if buildPos == nil then
+	ask("请输入开始坐标")
 	x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
-end
+	while(x == nil)do
+		ask("请输入正确格式（数字坐标x 数字坐标y 数字坐标z）")
+		x, y, z = string.match(answer, "(%d+) (%d+) (%d+)");
+	end
+else
+	x, y, z = string.match(buildPos, "(%d+) (%d+) (%d+)");
+	if (x == nil) then
+		tip("err input!!!")
+		return;
+	end	
+end	
 
+--[[
 local oldStage = loadWorldData(getActorValue("name"));
 if oldStage then
 	if oldStage.startX and oldStage.startY and oldStage.startZ and oldStage.width and oldStage.height then
@@ -201,7 +222,8 @@ if oldStage then
 					oldStage.startX, oldStage.startY, oldStage.startZ, 
 					oldStage.width, 50, oldStage.height));
 	end				
-end					
+end	
+--]]				
 
 createScene(stageTable, aa, bb, {x=x, z=z})
 
