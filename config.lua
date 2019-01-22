@@ -39,6 +39,10 @@ Constant =
 	-- 炸弹
 	GRID_BOMB = 4;	
 	
+	--
+	ITEM_TYPE_BOMB = 0;
+	ITEM_TYPE_RANGE = 1;
+	
 	-- 玩家控制键
 	KEY_PLAYER_FORWARD			= "up";
 	KEY_PLAYER_BACK			    = "down";

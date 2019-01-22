@@ -28,6 +28,13 @@ function GameScene:ctor()
 	self._bombInx = 1;
 end
 
+function GameScene:_2dTo3dPos(px, py)
+	local objX = self._stageStartX + px + ObjOffX;
+	local objY = self._stageStartY + ObjOffY;
+	local objZ = self._stageStartZ + py + ObjOffZ;			
+	return objX, objY, objZ;
+end	
+
 function GameScene:saveBlockMark(objX, objY, objZ)
 	local idMark = getBlock(objX, objY, objZ);
 	local reBuildMark = loadWorldData("reBuildMark");
@@ -59,6 +66,7 @@ end
 
 function GameScene:_createBomb(posX, posY, playerInx, range)
 	local bomb = {};
+	bomb.itemType = Constant.ITEM_TYPE_BOMB;
 	bomb.range = range;
 	bomb.inx = self._bombInx;
 	bomb.playerInx = playerInx;
@@ -67,11 +75,8 @@ function GameScene:_createBomb(posX, posY, playerInx, range)
 	bomb.posY = posY;
 	bomb.life = 5.0;
 	
-	runForActor(bomb.name, function()
-		local objX = self._stageStartX + posX + ObjOffX;
-		local objY = self._stageStartY + ObjOffY;
-		local objZ = self._stageStartZ + posY + ObjOffZ;		
-		setPos(objX, objY, objZ)
+	runForActor(bomb.name, function()	
+		setPos(self:_2dTo3dPos(posX, posY))
 		playLoop(0, 1000);
 		show();
 	end)
@@ -81,6 +86,16 @@ function GameScene:_createBomb(posX, posY, playerInx, range)
 		self._bombInx = 1;
 	end
 	return bomb;
+end
+
+function GameScene:_createItem(posX, posY)
+	local item = {};
+	item.itemType = Constant.ITEM_TYPE_RANGE;
+	item.name = "item_" .. os.clock();		
+	local objX, objY, objZ = self:_2dTo3dPos(posX, posY);
+	clone("effect", {obj_name = "eff_item_range", actor_name = item.name, x = objX, y = objY + 1, z = objZ});	
+
+	return item;
 end	
 
 function GameScene:init(playerList, stageData)	
@@ -107,6 +122,12 @@ function GameScene:init(playerList, stageData)
 		local acName = "bomb_" .. poolInx;
 		clone("bomb", {actor_name = acName, pos = {x = 0, y = 0, z = 0}});
 	end
+	
+	for i = 1, bombPoolNums do
+		local poolInx = i;
+		local acName = "bomb_" .. poolInx;
+		clone("bomb", {actor_name = acName, pos = {x = 0, y = 0, z = 0}});
+	end	
 	
 	local reBuildMark = loadWorldData("reBuildMark");
 	if reBuildMark then
@@ -187,6 +208,47 @@ function GameScene:updatePlayerInput(inputData)
 	end
 end
 
+function GameScene:playEffect(posX, posY)
+	local objX, objY, objZ = self:_2dTo3dPos(posX, posY);
+	clone("effect", {obj_name = "eff_fire", x = objX, y = objY + 1, z = objZ});
+end
+
+function GameScene:checkPlayersHit(posX, posY)
+	for pInx = 1, #self._players do
+		local player = self._players[pInx];
+		if posX == player.pos.x and posY == player.pos.y then
+			runForActor(player.name, function()
+				delete();
+			end)			
+			return true;
+		end
+	end	
+	return false;
+end
+
+function GameScene:checkBlockHit(posX, posY)
+	local objX, objY, objZ = self:_2dTo3dPos(posX, posY);
+	objY = objY + 1;
+	self:saveBlockMark(objX, objY, objZ);
+	setBlock(objX, objY, objZ, 0);
+	
+	-- if random then
+		local item = self:_createItem(posX, posY);
+		self:setRecordObject(posX, posY, item);
+	--end	
+end	
+
+function GameScene:checkItemHit(player)
+	local item = self:getRecordObject(player.pos.x, player.pos.y);
+	if item and item.itemType == Constant.ITEM_TYPE_RANGE then
+		runForActor(item.name, function()
+			delete();
+		end)
+		
+		player.bomerRange = player.bomerRange + 1;
+	end
+end	
+
 function GameScene:update(dt)
 	for pInx = 1, #self._players do
 		local player = self._players[pInx];
@@ -196,13 +258,12 @@ function GameScene:update(dt)
 				if (player.dirData.time >= Constant.PLAYER_MOVE_GRID_TIME) then				
 					local destX = player.dirData.dest[1];
 					local destY = player.dirData.dest[2];
-					local objX = self._stageStartX + destX + ObjOffX;
-					local objY = self._stageStartY + ObjOffY;
-					local objZ = self._stageStartZ + destY + ObjOffZ;
-					setPos(objX, objY, objZ);
+					setPos(self:_2dTo3dPos(destX, destY));
 					player.pos.x = destX;
 					player.pos.y = destY;
 					player.dirData = nil;
+					
+					self:checkItemHit(player);
 				else
 					local x, y, z = getPos();
 					local xOffset = player.dirData.vec[1] * dt;
@@ -221,18 +282,27 @@ function GameScene:update(dt)
 			-- raise event
 			local function raiseBomb(px, py)
 				local bomb = self:getRecordObject(px, py);
-				if bomb then
+				if bomb and bomb.itemType == Constant.ITEM_TYPE_BOMB then
 					local function doBoom(posX, posY)
+						if posX < 1 or posX > #self._stageMap or posY < 1 or posY > #self._stageMap[posX] then
+							return false;
+						elseif self._stageMap[posX][posY] == Constant.GRID_BLOCK then
+							return false;
+						end
+						
+						self:checkPlayersHit(posX, posY);
+						
+						self:playEffect(posX, posY);
 						if self._stageMap[posX][posY] == Constant.GRID_BREAK then
-							self._stageMap[posX][posY] = Constant.GRID_WAY;							
-							local objX = self._stageStartX + posX;
-							local objY = self._stageStartY + 1;
-							local objZ = self._stageStartZ + posY;
-							self:saveBlockMark(objX, objY, objZ);
-							setBlock(objX, objY, objZ, 0);
+							self._stageMap[posX][posY] = Constant.GRID_WAY;
+							self:checkBlockHit(posX, posY);
+							return true;
 						elseif self._stageMap[posX][posY] == Constant.GRID_BOMB then	
 							raiseBomb(posX, posY);
+							return true;
 						end
+						
+						return false;
 					end
 
 					-- play eff
@@ -243,20 +313,25 @@ function GameScene:update(dt)
 					end)
 					
 					-- do logic
-					self:setRecordObject(bomb.posX, bomb.posY, 0);
+					self:setRecordObject(bomb.posX, bomb.posY, nil);
 					self._bomerPool[bomb.inx] = nil;					
 					self._stageMap[bomb.posX][bomb.posY] = Constant.GRID_WAY;
 					local player = self._players[bomb.playerInx + 1];
 					if player then
 						player.bomers = player.bomers - 1;
-					end	
-					
-					for i = 1, bomb.range do
-						doBoom(bomb.posX + i, bomb.posY);
-						doBoom(bomb.posX - i, bomb.posY);
-						doBoom(bomb.posX, bomb.posY + i);
-						doBoom(bomb.posX, bomb.posY - i);
-					end			
+					end					
+						
+					local dirChange = {{1,0},{-1,0},{0,1},{0,-1}}; 
+					for dirInx = 1, 4 do
+						local dir = dirChange[dirInx];
+						for i = 1, bomb.range do
+							local posX = bomb.posX + dir[1] * i;
+							local posY = bomb.posY + dir[2] * i;
+							if(doBoom(posX, posY)) then
+								break;
+							end
+						end
+					end
 				end	
 			end
 			

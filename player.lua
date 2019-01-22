@@ -7,4 +7,4 @@ local function onClone(param)
 	playLoop(0, 1000);
 end
 registerCloneEvent(onClone);
-hide();
+delete();
